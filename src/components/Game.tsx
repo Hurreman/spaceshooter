@@ -34,6 +34,9 @@ export default function Game() {
     let bullets: any[] = [];
     let stars: any[] = [];
     let shield: any = {};
+
+    let lastEnemySpawn = 0;
+    let lastStarSpawn = 0;
     
     let energy = maxEnergy;
 
@@ -203,9 +206,24 @@ export default function Game() {
             moveBullets(delta);
             moveStars(delta);
 
-            energyBarFill.current.style.transform = 'translateY(' +
-                    ((maxEnergy - energy) * 20)
-                    + '%)';
+            energyBarFill.current.style.transform = 'translateY(' +((maxEnergy - energy) * 20)+ '%)';
+
+            // Stars Spawning
+            if( delta.lastTime - lastStarSpawn >= 250 ) {
+                const star = generateStar(app, undefined);
+                app.stage.addChild(star);
+                stars.push( star );
+                lastStarSpawn = delta.lastTime;
+            }
+
+            // Enemies every 2 s
+            if( delta.lastTime - lastEnemySpawn >= 2000 ) {
+                const enemy = createEnemy(Math.random() * app.screen.width, 0);
+                app.stage.addChild(enemy);
+                enemies.push(enemy);
+                lastEnemySpawn = delta.lastTime;
+            }
+
         }
 
         (async () => {
@@ -261,21 +279,6 @@ export default function Game() {
             shield.scale.set(1.5);
 
             player.addChild(shield);
-
-            // Enemy spawning
-            // TODO: move to gameloop and use the deltatime instead of setInterval.
-            setInterval(() => {
-                const enemy = createEnemy(Math.random() * app.screen.width, 0);
-                app.stage.addChild(enemy);
-                enemies.push(enemy);
-            }, 1000);
-
-            // Stars Spawning
-            setInterval( () => {
-                const star = generateStar(app);
-                app.stage.addChild(star);
-                stars.push( star );
-            }, 250);
 
             // Player movement
             document.addEventListener('keydown', (e) => {
