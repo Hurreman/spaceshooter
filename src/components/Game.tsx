@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Application, Assets, Sprite, AnimatedSprite, Texture, Container } from 'pixi.js';
+import { Application, Assets, Sprite, AnimatedSprite, Texture, Container, Filter } from 'pixi.js';
 import { generateStars, generateStar } from '../generateStars.ts';
 import { CRTFilter, GlitchFilter } from 'pixi-filters';
 
@@ -47,6 +47,8 @@ export default function Game() {
         let lastEnemySpawn = 0;
         let lastStarSpawn = 0;
         let lastEnergyUpdate = 0;
+
+        let crtFilter : CRTFilter;
 
         let energy = maxEnergy;
 
@@ -235,8 +237,13 @@ export default function Game() {
             const gameLoop = (delta: DeltaTime) => {
 
                 if (gameRunning) {
+                    
                     moveEnemies();
                     moveBullets();
+
+                    crtFilter.seed = Math.random();
+                    crtFilter.time += 0.5;
+                    
                     
                     if( energyBarFill && energyBarFill.current ){
                         energyBarFill.current.style.transform = 'translateY(' + ((maxEnergy - energy) * 20) + '%)';    
@@ -389,15 +396,16 @@ export default function Game() {
                 app.ticker.add(gameLoop);
 
                 // Filter!?
-                const filter = new CRTFilter({
+                crtFilter = new CRTFilter({
                     curvature: 10,
                     lineWidth: 0.2,
-                    lineContrast: 0.8,
-                    noise: 0.8,
-                    noiseSize: 1.5,
+                    lineContrast: 0.6,
+                    noise: 0.4,
+                    noiseSize: 1,
                     vignetting: 0.5,
                     vignettingAlpha: 0.7,
-                    time: 0.5
+                    time: 0.5,
+                    seed: 1
                 });
 
                 const glitchFilter = new GlitchFilter({
@@ -408,7 +416,7 @@ export default function Game() {
                     green: {x:-1, y: 0}
                 });
 
-                app.stage.filters = [filter, glitchFilter];
+                app.stage.filters = [crtFilter, glitchFilter];
 
                 document.addEventListener("visibilitychange", () => {
                     if (document.hidden) {
