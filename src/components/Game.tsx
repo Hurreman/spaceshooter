@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Application, Assets, Sprite, AnimatedSprite, Texture, Container } from 'pixi.js';
 import { generateStars, generateStar } from '../generateStars.ts';
-import { Graphics } from 'pixi.js';
 
 interface Bullet extends Sprite {
     speed: number;
@@ -17,6 +16,10 @@ interface Enemy extends Sprite {
     speed: number;
 }
 
+interface DeltaTime {
+    lastTime: number;
+}
+
 export default function Game() {
 
     try {
@@ -30,13 +33,11 @@ export default function Game() {
         const [score, setScore] = useState<number>(0);
         const [playerHpState, setPlayerHpState] = useState<number>(10);
         const [energyState, setEnergyState] = useState<number>(maxEnergy);
-        const [energyRechargeRate, setEnergyRechargeRate] = useState<number>(0.5);
         const [gameRunningState, setGameRunningState] = useState<boolean>(false);
         const [gameOverState,setGameOverState] = useState<boolean>(false);
 
         let enemies: any[] = [];
         let player: any = {};
-        let energyGfx: any = {};
         let bullets: any[] = [];
         let stars: any[] = [];
         let shield: any = {};
@@ -44,22 +45,21 @@ export default function Game() {
 
         let lastEnemySpawn = 0;
         let lastStarSpawn = 0;
+        let lastEnergyUpdate = 0;
 
         let energy = maxEnergy;
 
         let gameRunning = false;
         let gameOver = false;
 
-        let energyTimer;
+        const explosionTextures : any[] = [];
 
-        const explosionTextures = [];
+        const gameCanvas = useRef<HTMLDivElement>(null);
 
-        const gameCanvas = useRef(null);
+        const energyBar = useRef<HTMLDivElement>(null);
+        const energyBarFill = useRef<HTMLDivElement>(null);
 
-        const energyBar = useRef(null);
-        const energyBarFill = useRef(null);
-
-        const fireBullet = (app) => {
+        const fireBullet = (app : Application) => {
             if (energy >= 1) {
                 const bullet = createBullet();
                 app.stage.addChild(bullet);
@@ -78,7 +78,7 @@ export default function Game() {
 
         const createEnemy = (x: number, y: number) => {
 
-            const enemy = Sprite.from('/public/enemy.jpg') as Enemy;
+            const enemy = Sprite.from('/enemy.jpg') as Enemy;
             enemy.x = x;
             enemy.y = y;
             enemy.hp = 2;
@@ -89,7 +89,7 @@ export default function Game() {
         }
 
         const createBullet = () => {
-            const bullet = Sprite.from('/public/bullet.png') as Bullet;
+            const bullet = Sprite.from('/bullet.png') as Bullet;
             bullet.x = player.x;
             bullet.y = player.y;
             bullet.anchor.set(0.5);
@@ -101,7 +101,7 @@ export default function Game() {
         useEffect(() => {
             const app = new Application();
 
-            const moveEnemies = (delta) => {
+            const moveEnemies = () => {
 
                 enemies.forEach(enemy => {
                     if (!enemy.destroyed) {
@@ -112,7 +112,7 @@ export default function Game() {
 
             // Test For Hit
             // A basic AABB check between two different squares
-            function testForAABB(object1, object2) {
+            function testForAABB(object1: any, object2: any) {
                 try {
                     const bounds1 = object1.getBounds();
                     const bounds2 = object2.getBounds();
@@ -129,7 +129,7 @@ export default function Game() {
                 }
             }
 
-            const moveBullets = (delta) => {
+            const moveBullets = () => {
                 bullets.forEach(bullet => {
                     if (!bullet.destroyed) {
 
@@ -169,15 +169,15 @@ export default function Game() {
                 app.stage.addChild(explosion);
             }
 
-            console.log(energyBar);
-
-            const movePlayer = (e) => {
+            const movePlayer = (e: any) => {
                 if (gameRunning) {
                     let pos = e.data.global;
                     player.x = pos.x;
                     player.y = pos.y;
 
-                    energyBar.current.style.transform = 'translateX(' + (pos.x + (player.width / 2)) + 'px) translateY(' + (pos.y - 15) + 'px)';
+                    if( energyBar.current ) {
+                        energyBar.current.style.transform = 'translateX(' + (pos.x + (player.width / 2)) + 'px) translateY(' + (pos.y - 15) + 'px)';
+                    }
 
                     // Collisio Detection
                     enemies.forEach(enemy => {
@@ -207,13 +207,13 @@ export default function Game() {
                 }
             }
 
-            const moveStars = (delta) => {
+            const moveStars = () => {
                 stars.forEach(star => {
                     star.y += star.speed;
                 });
             }
 
-            const takeDamage = ( damage ) => {
+            const takeDamage = ( damage: number ) => {
                 console.log( 'Take ' + damage + ' damage');
                 setPlayerHpState( prev => {
                     return prev - damage
@@ -227,12 +227,16 @@ export default function Game() {
                 }
             }
 
-            const gameLoop = (delta) => {
+            const gameLoop = (delta: DeltaTime) => {
 
                 if (gameRunning) {
-                    moveEnemies(delta);
-                    moveBullets(delta);
-                    energyBarFill.current.style.transform = 'translateY(' + ((maxEnergy - energy) * 20) + '%)';
+                    moveEnemies();
+                    moveBullets();
+                    
+                    if( energyBarFill && energyBarFill.current ){
+                        energyBarFill.current.style.transform = 'translateY(' + ((maxEnergy - energy) * 20) + '%)';    
+                    }
+                    
                     // Enemies every 2 s
                     if (delta.lastTime - lastEnemySpawn >= 500) {
                         const enemy = createEnemy(Math.random() * app.screen.width, 0);
@@ -240,9 +244,25 @@ export default function Game() {
                         enemies.push(enemy);
                         lastEnemySpawn = delta.lastTime;
                     }
+
+                    if( delta.lastTime - lastEnergyUpdate ) {
+                        if (energy + 1 >= maxEnergy) {
+                            energy = maxEnergy;
+                        }
+                        else {
+                            energy += 1;
+                        }
+    
+                        setEnergyState(() => {
+                            return energy;
+                        });
+
+                        lastEnergyUpdate = delta.lastTime;
+                    }
+
                 }
 
-                moveStars(delta);
+                moveStars();
 
                 // Stars Spawning
                 if (delta.lastTime - lastStarSpawn >= 250) {
@@ -278,15 +298,17 @@ export default function Game() {
                     backgroundColor: 0x000000,
                 });
 
-                gameCanvas.current.appendChild(app.canvas);
+                if( gameCanvas && gameCanvas.current ) {
+                    gameCanvas.current.appendChild(app.canvas);
+                }
 
-                await Assets.load('/public/player.jpg');
-                await Assets.load('/public/shield.png');
-                await Assets.load('/public/enemy.jpg');
-                await Assets.load('/public/bullet.png');
+                await Assets.load('/player.jpg');
+                await Assets.load('/shield.png');
+                await Assets.load('/enemy.jpg');
+                await Assets.load('/bullet.png');
 
                 // Load the animation sprite sheet
-                await Assets.load('/public/pixelexplosion.json');
+                await Assets.load('/pixelexplosion.json');
                 let i;
 
                 for (i = 1; i < 60; i++) {
@@ -306,7 +328,7 @@ export default function Game() {
 
                 app.stage.addChild(player);
 
-                const playerSprite = Sprite.from('/public/player.jpg') as Player;
+                const playerSprite = Sprite.from('/player.jpg') as Player;
 
                 player.x = app.screen.width / 2;
                 player.y = app.screen.height / 2;
@@ -315,7 +337,7 @@ export default function Game() {
 
                 player.addChild(playerSprite);
 
-                shield = Sprite.from('/public/shield.png');
+                shield = Sprite.from('/shield.png');
                 shield.x = 0;
                 shield.y = 0;
 
@@ -338,24 +360,9 @@ export default function Game() {
                     }
                 });
 
-                document.addEventListener('keyup', (e) => {
+                document.addEventListener('keyup', () => {
                     //e.key;
                 });
-
-                //fireBullet(app);
-
-                energyTimer = setInterval(() => {
-                    if (energy + 1 >= maxEnergy) {
-                        energy = maxEnergy;
-                    }
-                    else {
-                        energy += 1;
-                    }
-
-                    setEnergyState(() => {
-                        return energy;
-                    });
-                }, energyRechargeRate * 1000);
 
                 // Enable interactivity!
                 app.stage.eventMode = 'dynamic';

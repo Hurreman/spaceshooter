@@ -6,10 +6,8 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
 const http = require('http');
-const https = require('https');
 
 const httpPort = 80;
-const httpsPort = 443;
 
 const compression = require('compression');
 
@@ -51,10 +49,10 @@ class SpaceShooterServer {
         this.app.use(express.urlencoded({ extended: false }));
         this.app.use(cookieParser());
         this.app.use(bodyParser.json());
-        this.app.use(express.static(path.join(__dirname, './dist')));
+        this.app.use(express.static(path.join(__dirname, '../dist')));
         this.app.use(compression());
 
-        this.app.use(cors();
+        this.app.use(cors());
     }
 
     startServer() {
