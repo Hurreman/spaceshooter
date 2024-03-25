@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Application, Assets, Sprite, AnimatedSprite, Texture, Container } from 'pixi.js';
+import { Application, Assets, Sprite, AnimatedSprite, Texture, Container, BlurFilter } from 'pixi.js';
 import { generateStars, generateStar } from '../generateStars.ts';
+import { CRTFilter, GlitchFilter } from 'pixi-filters';
 
 interface Bullet extends Sprite {
     speed: number;
@@ -227,6 +228,10 @@ export default function Game() {
                 }
             }
 
+            /**
+             * Game Loop! Where most magic happens
+             * @param delta 
+             */
             const gameLoop = (delta: DeltaTime) => {
 
                 if (gameRunning) {
@@ -245,7 +250,7 @@ export default function Game() {
                         lastEnemySpawn = delta.lastTime;
                     }
 
-                    if( delta.lastTime - lastEnergyUpdate ) {
+                    if( delta.lastTime - lastEnergyUpdate >= 1000 ) {
                         if (energy + 1 >= maxEnergy) {
                             energy = maxEnergy;
                         }
@@ -291,11 +296,14 @@ export default function Game() {
                 bullets = [];
             }
 
+            
+            // Wrapped in (async() => ) in order to use await and aviod promise callback hell :D
             (async () => {
+                
                 await app.init({
                     width: 800,
                     height: 600,
-                    backgroundColor: 0x000000,
+                    backgroundColor: 0x001010,
                 });
 
                 if( gameCanvas && gameCanvas.current ) {
@@ -322,7 +330,7 @@ export default function Game() {
                 }
 
                 /**
-                 * Setup the player Graphics
+                 * Setup the player Graphics, consistin of the player ship and shield
                  */
                 player = new Container();
 
@@ -364,10 +372,8 @@ export default function Game() {
                     //e.key;
                 });
 
-                // Enable interactivity!
-                app.stage.eventMode = 'dynamic';
-
-                // Make sure the whole canvas area is interactive, not just the circle.
+                // Enable interactivity
+                app.stage.eventMode = 'static';
                 app.stage.hitArea = app.screen;
 
                 app.stage.on("pointermove", movePlayer);
@@ -376,10 +382,33 @@ export default function Game() {
                     fireBullet(app);
                 })
 
+                // Generate initial stars
                 stars = generateStars(app);
 
                 // Game loop
                 app.ticker.add(gameLoop);
+
+                // Filter!?
+                const filter = new CRTFilter({
+                    curvature: 10,
+                    lineWidth: 0.2,
+                    lineContrast: 0.8,
+                    noise: 0.8,
+                    noiseSize: 1.5,
+                    vignetting: 0.5,
+                    vignettingAlpha: 0.7,
+                    time: 0.5
+                });
+
+                const glitchFilter = new GlitchFilter({
+                    slices: 9,
+                    offset: 5,
+                    red: {x: 1, y: 0},
+                    blue: {x: 1, y: -1},
+                    green: {x:-1, y: 0}
+                });
+
+                app.stage.filters = [filter, glitchFilter];
 
                 document.addEventListener("visibilitychange", () => {
                     if (document.hidden) {

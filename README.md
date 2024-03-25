@@ -6,3 +6,7 @@ Just a simple space game experiementing with PixieJs.
 
 Clone repo, run "npm install" followed by "npm run dev" from the root.
 Express-server and docker no the to-do.
+
+# Demo
+
+Playable demo (hopefully) up at https://spaceshooter.ddns.net/ :)
