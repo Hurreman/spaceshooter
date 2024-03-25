@@ -257,7 +257,7 @@ export default function Game() {
                         lastEnemySpawn = delta.lastTime;
                     }
 
-                    if( delta.lastTime - lastEnergyUpdate >= 1000 ) {
+                    if( delta.lastTime - lastEnergyUpdate >= 250 ) {
                         if (energy + 1 >= maxEnergy) {
                             energy = maxEnergy;
                         }
@@ -308,8 +308,8 @@ export default function Game() {
             (async () => {
                 
                 await app.init({
-                    width: 800,
-                    height: 600,
+                    width: window.innerWidth,
+                    height: window.innerHeight,
                     backgroundColor: 0x001010,
                 });
 
@@ -388,6 +388,20 @@ export default function Game() {
                 app.stage.on("pointerdown", () => {
                     fireBullet(app);
                 })
+
+                app.stage.on('touchend', () => {
+                    if( !gameRunning ) {
+                        
+                        if( gameOver ) {
+                            restart();
+                        }
+                        else {
+                            setGameRunningState( true );
+                            gameRunning = true;
+                        }
+                        
+                    }
+                });
 
                 // Generate initial stars
                 stars = generateStars(app);
