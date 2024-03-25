@@ -148,6 +148,7 @@ export default function Game() {
             explosion.y = y;
             explosion.anchor.set(0.5);
             explosion.loop = false;
+            explosion.scale.set(1);
             explosion.gotoAndPlay(0);
             explosion.on('complete', (explosion) => {
                 explosion.destroy();
@@ -222,11 +223,15 @@ export default function Game() {
             await Assets.load('/public/bullet.png');
 
             // Load the animation sprite sheet
-            const texture = await Assets.load('https://pixijs.com/assets/spritesheet/mc.json');
+            await Assets.load('/public/pixelexplosion.json');
             let i;
 
-            for (i = 0; i < 26; i++) {
-                const texture = Texture.from(`Explosion_Sequence_A ${i + 1}.png`);
+            for (i = 1; i < 60; i++) {
+                let num = '000' + i;
+                if( i > 9 && i < 100 ) {
+                    num = '00' + i;
+                }
+                const texture = Texture.from(num + '.png');
 
                 explosionTextures.push(texture);
             }
