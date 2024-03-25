@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  server:
+    container_name: spaceshooter_server
+    build: ./
+    ports:
+      - "8081:80"
+    expose:
+      - "8081"
+    environment:
+      - TZ=Sweden/Stockholm
+    restart: unless-stopped
+    depends_on:
+      - db
+  # Database ( MySql )
+  db:
+    container_name: spaceshooter_db
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
