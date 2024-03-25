@@ -8,7 +8,7 @@ RUN npm run build
 # Copy dist folder and start the express server
 FROM node:18-alpine as server
 COPY --from=builder /home/node/app/dist /spaceshooter/dist
-WORKDIR /spaceshooter
+WORKDIR /spaceshooter/server
 
 RUN npm install pm2@latest -g
 

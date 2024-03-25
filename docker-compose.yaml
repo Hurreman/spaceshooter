@@ -5,9 +5,9 @@ services:
     container_name: spaceshooter_server
     build: ./
     ports:
-      - "8081:80"
+      - "8085:85"
     expose:
-      - "8081"
+      - "8085"
     environment:
       - TZ=Sweden/Stockholm
     restart: unless-stopped
