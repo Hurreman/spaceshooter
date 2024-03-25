@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Application, Assets, Sprite, AnimatedSprite, Texture, Container, BlurFilter } from 'pixi.js';
+import { Application, Assets, Sprite, AnimatedSprite, Texture, Container } from 'pixi.js';
 import { generateStars, generateStar } from '../generateStars.ts';
 import { CRTFilter, GlitchFilter } from 'pixi-filters';
 
