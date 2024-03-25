@@ -1,5 +1,7 @@
 'use strict';
 
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
@@ -7,7 +9,7 @@ const logger = require('morgan');
 
 const http = require('http');
 
-const httpPort = 80;
+const httpPort = process.env.HTTP_PORT || 80;
 
 const compression = require('compression');
 
