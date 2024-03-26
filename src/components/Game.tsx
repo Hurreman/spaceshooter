@@ -24,7 +24,7 @@ interface DeltaTime {
 export default function Game() {
 
     try {
-        const maxEnergy = 5;
+        //const maxEnergy = 5;
 
         /**
          * State used for UI elements outside the game. The same is reflected in variables below,
@@ -33,7 +33,7 @@ export default function Game() {
         const [shieldActive, setShieldActive] = useState<boolean>(true);
         const [score, setScore] = useState<number>(0);
         const [playerHpState, setPlayerHpState] = useState<number>(10);
-        const [energyState, setEnergyState] = useState<number>(maxEnergy);
+        //const [energyState, setEnergyState] = useState<number>(maxEnergy);
         const [gameRunningState, setGameRunningState] = useState<boolean>(false);
         const [gameOverState,setGameOverState] = useState<boolean>(false);
 
@@ -46,12 +46,12 @@ export default function Game() {
 
         let lastEnemySpawn = 0;
         let lastStarSpawn = 0;
-        let lastEnergyUpdate = 0;
+        //let lastEnergyUpdate = 0;
         let lastBulletFire = 0;
 
         let crtFilter : CRTFilter;
 
-        let energy = maxEnergy;
+        //let energy = maxEnergy;
 
         let gameRunning = false;
         let gameOver = false;
@@ -78,10 +78,6 @@ export default function Game() {
                 });*/
             //}
         }
-
-        useEffect(() => {
-
-        }, [energyState]);
 
         const createEnemy = (x: number, y: number) => {
 
@@ -235,7 +231,7 @@ export default function Game() {
                         if( star.y > app.screen.height ) {
                             star.destroy();
                         }
-                        
+
                     }
                 });
             }
@@ -259,6 +255,10 @@ export default function Game() {
              * @param delta 
              */
             const gameLoop = (delta: DeltaTime) => {
+
+                // Clean up destroyed enemies and bullets
+                enemies = enemies.filter( enemy => !enemy.destroyed );
+                bullets = bullets.filter( bullet => !bullet.destroyed );
 
                 if (gameRunning) {
                     
