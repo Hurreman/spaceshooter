@@ -111,8 +111,13 @@ export default function Game() {
             const moveEnemies = () => {
 
                 enemies.forEach(enemy => {
+
                     if (!enemy.destroyed) {
                         enemy.y += enemy.speed;
+
+                        if( enemy.y > app.screen.height ) {
+                            enemy.destroy();
+                        }
                     }
                 });
             }
@@ -138,25 +143,33 @@ export default function Game() {
 
             const moveBullets = () => {
                 bullets.forEach(bullet => {
+                    
+
                     if (!bullet.destroyed) {
 
                         bullet.y -= bullet.speed;
 
-                        enemies.forEach(enemy => {
-                            if (!enemy.destroyed) {
-
-                                const hit = testForAABB(bullet, enemy);
-
-                                if (hit) {
-                                    // Create an explosion AnimatedSprite
-                                    explode(enemy.x, enemy.y);
-                                    enemy.hp = 0;
-                                    bullet.destroy();
-                                    enemy.destroy();
-                                    setScore(prev => prev + 1);
+                        if( bullet.y <= 0 ) {
+                            bullet.destroy();
+                        }
+                        else {
+                            enemies.forEach(enemy => {
+                                if (!enemy.destroyed) {
+    
+                                    const hit = testForAABB(bullet, enemy);
+    
+                                    if (hit) {
+                                        // Create an explosion AnimatedSprite
+                                        explode(enemy.x, enemy.y);
+                                        enemy.hp = 0;
+                                        bullet.destroy();
+                                        enemy.destroy();
+                                        setScore(prev => prev + 1);
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
+
                     }
 
                 });
@@ -216,7 +229,14 @@ export default function Game() {
 
             const moveStars = () => {
                 stars.forEach(star => {
-                    star.y += star.speed;
+                    if( !star.destroyed ) {
+                        star.y += star.speed;
+
+                        if( star.y > app.screen.height ) {
+                            star.destroy();
+                        }
+                        
+                    }
                 });
             }
 
@@ -267,7 +287,7 @@ export default function Game() {
                         lastEnemySpawn = delta.lastTime;
                     }
 
-                    if( delta.lastTime - lastEnergyUpdate >= 250 ) {
+                    /*if( delta.lastTime - lastEnergyUpdate >= 250 ) {
                         if (energy + 1 >= maxEnergy) {
                             energy = maxEnergy;
                         }
@@ -280,7 +300,7 @@ export default function Game() {
                         });
 
                         lastEnergyUpdate = delta.lastTime;
-                    }
+                    }*/
 
                 }
 
