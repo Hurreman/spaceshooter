@@ -1,27 +1,66 @@
 import { useEffect, useRef, useState } from 'react';
 import { Application, Assets, Sprite, AnimatedSprite, Texture, Container } from 'pixi.js';
 import { generateStars, generateStar } from '../generateStars.ts';
-import { CRTFilter, GlitchFilter } from 'pixi-filters';
+import { AdjustmentFilter, CRTFilter, GlitchFilter, ShockwaveFilter } from 'pixi-filters';
 
 interface Bullet extends Sprite {
     speed: number;
     damage: number;
 }
 
-interface Player extends Sprite {
-    speed: number;
-}
-
 interface Enemy extends Sprite {
+    type: string;
     hp: number;
     speed: number;
+    points: number;
 }
 
 interface DeltaTime {
     lastTime: number;
 }
 
+interface EnemyType {
+    type: string;
+    hp: number;
+    maxSpeed: number;
+    points: number;
+}
+
+const enemyTypes : EnemyType[] = [
+    {
+        type: 'standard',
+        hp: 1,
+        maxSpeed: 3,
+        points: 1,
+    },
+    {
+        type: 'large',
+        hp: 4,
+        maxSpeed: 1,
+        points: 5,
+    },
+]
+
 export default function Game() {
+
+    // Test For Hit
+    // A basic AABB check between two different squares
+    function testForAABB(object1: any, object2: any) {
+        try {
+            const bounds1 = object1.getBounds();
+            const bounds2 = object2.getBounds();
+
+            return (
+                bounds1.x < bounds2.x + bounds2.width
+                && bounds1.x + bounds1.width > bounds2.x
+                && bounds1.y < bounds2.y + bounds2.height
+                && bounds1.y + bounds1.height > bounds2.y
+            );
+        }
+        catch (error) {
+            return false;
+        }
+    }
 
     try {
         //const maxEnergy = 5;
@@ -46,12 +85,10 @@ export default function Game() {
 
         let lastEnemySpawn = 0;
         let lastStarSpawn = 0;
-        //let lastEnergyUpdate = 0;
         let lastBulletFire = 0;
 
         let crtFilter : CRTFilter;
 
-        //let energy = maxEnergy;
 
         let gameRunning = false;
         let gameOver = false;
@@ -60,37 +97,77 @@ export default function Game() {
 
         const gameCanvas = useRef<HTMLDivElement>(null);
 
-        /* Not used atms
-        const energyBar = useRef<HTMLDivElement>(null);
-        const energyBarFill = useRef<HTMLDivElement>(null);
-        */
-
         const fireBullet = (app : Application) => {
-            //if (energy >= 1) {
-                const bullet = createBullet();
-                app.stage.addChild(bullet);
-                bullets.push(bullet);
-                
-                /*energy -= 1;
-
-                setEnergyState(() => {
-                    return energy;
-                });*/
-            //}
+            const bullet = createBullet();
+            app.stage.addChild(bullet);
+            bullets.push(bullet);
         }
 
-        const createEnemy = (x: number, y: number) => {
+        const getRandomSpawnXPosition = (app: Application, attempts: number = 10 ) : number => {
+            const enemiesNearSpawn = enemies.filter( e => {
+                if( e.destroyed ) {
+                    return false;
+                }
+                return (e.y <= e.height*2 );
+            } );
+            const enemyXPositions = enemiesNearSpawn.map( e => Math.floor(e.x) );
 
+            const randX = Math.floor(Math.random() * app.screen.width);
+            if( !enemyXPositions.includes( randX ) ) {
+                return randX;
+            }
+
+            if( attempts <= 0 ) {
+                return 0;
+            }
+
+            return getRandomSpawnXPosition( app, attempts - 1 );
+        }
+
+        const spawnEnemy = ( app: Application ) => {
+            let type = 'standard';            
+            
+            if( Math.random() * 10 >= 8 ) {
+                type = 'large';
+            }
+            
+            const enemy = createEnemy(getRandomSpawnXPosition(app), 0, type);
+            
+
+            app.stage.addChild(enemy);
+            enemies.push(enemy);
+        }
+
+        /**
+         * Create Enemy 
+         * @param x
+         * @param y
+         * @param type 
+         * @returns Enemy
+         */
+        const createEnemy = (x: number, y: number, type: string) => {
+
+            const enemyTypeSettings = enemyTypes.find(e => e.type === type) || { type: 'standard', hp: 1, maxSpeed: 3, points: 1};
             const enemy = Sprite.from('/enemy.jpg') as Enemy;
+            enemy.type = enemyTypeSettings.type;
             enemy.x = x;
             enemy.y = y;
-            enemy.hp = 2;
-            enemy.speed = Math.ceil(Math.random() * 3);
+            enemy.hp = enemyTypeSettings.hp;
+            enemy.points = enemyTypeSettings.points;
+            enemy.speed = Math.ceil(Math.random() * enemyTypeSettings.maxSpeed);
             enemy.anchor.set(0.5);
+
+            if( enemyTypeSettings.type === 'large' ) {
+                enemy.scale.set(3);
+            }
 
             return enemy;
         }
 
+        /**
+         * Create Bullet
+         * @returns void
+         */
         const createBullet = () => {
             const bullet = Sprite.from('/bullet.png') as Bullet;
             bullet.x = player.x;
@@ -101,155 +178,184 @@ export default function Game() {
             return bullet;
         }
 
-        useEffect(() => {
-            const app = new Application();
+        
+        /**
+         * Move enemies
+         */
+        const moveEnemies = (app: Application) => {
 
-            const moveEnemies = () => {
+            enemies.forEach(enemy => {
 
-                enemies.forEach(enemy => {
+                if (!enemy.destroyed) {
+                    enemy.y += enemy.speed;
 
-                    if (!enemy.destroyed) {
-                        enemy.y += enemy.speed;
-
-                        if( enemy.y > app.screen.height ) {
-                            enemy.destroy();
-                        }
+                    if( enemy.y > app.screen.height ) {
+                        enemy.destroy();
                     }
-                });
-            }
-
-            // Test For Hit
-            // A basic AABB check between two different squares
-            function testForAABB(object1: any, object2: any) {
-                try {
-                    const bounds1 = object1.getBounds();
-                    const bounds2 = object2.getBounds();
-
-                    return (
-                        bounds1.x < bounds2.x + bounds2.width
-                        && bounds1.x + bounds1.width > bounds2.x
-                        && bounds1.y < bounds2.y + bounds2.height
-                        && bounds1.y + bounds1.height > bounds2.y
-                    );
                 }
-                catch (error) {
-                    return false;
-                }
-            }
+            });
+        }
 
-            const moveBullets = () => {
-                bullets.forEach(bullet => {
-                    
+        const moveBullets = (app: Application) => {
+            bullets.forEach(bullet => {
+                
 
-                    if (!bullet.destroyed) {
+                if (!bullet.destroyed) {
 
-                        bullet.y -= bullet.speed;
+                    bullet.y -= bullet.speed;
 
-                        if( bullet.y <= 0 ) {
-                            bullet.destroy();
-                        }
-                        else {
-                            enemies.forEach(enemy => {
-                                if (!enemy.destroyed) {
-    
-                                    const hit = testForAABB(bullet, enemy);
-    
-                                    if (hit) {
+                    if( bullet.y <= 0 ) {
+                        bullet.destroy();
+                    }
+                    else {
+                        enemies.forEach(enemy => {
+                            if (!enemy.destroyed) {
+
+                                const hit = testForAABB(bullet, enemy);
+
+                                if (hit) {
+                                    bullet.destroy();
+                                    enemy.hp -= 1;
+
+                                    const damageFilter = new AdjustmentFilter({
+                                        red: 5
+                                    });
+                                    
+                                    if( enemy.hp === 0 ) {
                                         // Create an explosion AnimatedSprite
-                                        explode(enemy.x, enemy.y);
-                                        enemy.hp = 0;
-                                        bullet.destroy();
+                                        explode(app, enemy.x, enemy.y);
                                         enemy.destroy();
-                                        setScore(prev => prev + 1);
+                                        setScore(prev => prev + enemy.points);
+                                    }
+                                    else {
+                                        enemy.filters = [damageFilter];
+                                        setTimeout(() => {
+                                            enemy.filters = [];
+                                        }, 150 );
                                     }
                                 }
-                            });
-                        }
-
+                            }
+                        });
                     }
 
-                });
+                }
+
+            });
+        }
+
+        /**
+         * Move stars
+         * @param app 
+         */
+        const moveStars = (app: Application) => {
+            stars.forEach(star => {
+                if( !star.destroyed ) {
+                    star.y += star.speed;
+
+                    if( star.y > app.screen.height ) {
+                        star.destroy();
+                    }
+
+                }
+            });
+        }
+
+        /**
+         * Take player damage
+         * @param damage 
+         */
+        const takeDamage = ( damage: number ) => {
+            console.log( 'Take ' + damage + ' damage');
+            setPlayerHpState( prev => {
+                return prev - damage
+            } );
+            playerHp -= damage;
+
+            if( playerHp <= 0 ) {
+                gameRunning = false;
+                gameOver = true;
+                setGameOverState( true );
             }
+        }
 
-            const explode = (x: number, y: number) => {
-                const explosion = new AnimatedSprite(explosionTextures);
-                explosion.x = x;
-                explosion.y = y;
-                explosion.anchor.set(0.5);
-                explosion.loop = false;
-                explosion.scale.set(1);
-                explosion.gotoAndPlay(0);
-                explosion.on('complete', (explosion) => {
-                    explosion.destroy();
-                });
-                app.stage.addChild(explosion);
-            }
+        /**
+         * Move the playeer
+         * @param app 
+         * @param e 
+         */
+        const movePlayer = (app: Application, e: any) => {
+            if (gameRunning) {
+                let pos = e.data.global;
+                player.x = pos.x;
+                
+                // Position the player above / in front the cursor (otherwise it's obscured by your finger on mobile )
+                player.y = pos.y - player.height;
 
-            const movePlayer = (e: any) => {
-                if (gameRunning) {
-                    let pos = e.data.global;
-                    player.x = pos.x;
-                    // Position the player above / in front the cursor (otherwise it's obscured by your finger on mobile )
-                    player.y = pos.y - player.height;
+                // Collisio Detection
+                enemies.forEach(enemy => {
+                    try {
+                        const hit = testForAABB(player, enemy);
+                        if (hit) {
+                            explode(app, player.x, player.y);
+                            enemy.destroy();
 
-                    /*if( energyBar.current ) {
-                        energyBar.current.style.transform = 'translateX(' + (pos.x + (player.width / 2)) + 'px) translateY(' + (pos.y - 15) + 'px)';
-                    }*/
-
-                    // Collisio Detection
-                    enemies.forEach(enemy => {
-                        try {
-                            const hit = testForAABB(player, enemy);
-                            if (hit) {
-                                explode(player.x, player.y);
-                                enemy.destroy();
-
-                                if (shield.alpha === 1) {
-                                    setShieldActive(false);
-                                    shield.alpha = 0;
-                                    setTimeout(() => {
-                                        shield.alpha = 1;
-                                        setShieldActive(true);
-                                    }, 2000);
-                                }
-                                else {
-                                    takeDamage(1);
-                                }
+                            if (shield.alpha === 1) {
+                                setShieldActive(false);
+                                shield.alpha = 0;
+                                setTimeout(() => {
+                                    shield.alpha = 1;
+                                    setShieldActive(true);
+                                }, 2000);
+                            }
+                            else {
+                                takeDamage(1);
                             }
                         }
-                        catch (error) {
-                            return;
-                        }
-                    });
-                }
-            }
-
-            const moveStars = () => {
-                stars.forEach(star => {
-                    if( !star.destroyed ) {
-                        star.y += star.speed;
-
-                        if( star.y > app.screen.height ) {
-                            star.destroy();
-                        }
-
+                    }
+                    catch (error) {
+                        return;
                     }
                 });
             }
+        }
 
-            const takeDamage = ( damage: number ) => {
-                console.log( 'Take ' + damage + ' damage');
-                setPlayerHpState( prev => {
-                    return prev - damage
-                } );
-                playerHp -= damage;
+        const explode = (app: Application, x: number, y: number) => {
+            const explosion = new AnimatedSprite(explosionTextures);
+            explosion.x = x;
+            explosion.y = y;
+            explosion.anchor.set(0.5);
+            explosion.loop = false;
+            explosion.scale.set(1);
+            explosion.gotoAndPlay(0);
+            explosion.on('complete', (explosion) => {
+                explosion.destroy();
+            });
+            app.stage.addChild(explosion);
+        }
 
-                if( playerHp <= 0 ) {
-                    gameRunning = false;
-                    gameOver = true;
-                    setGameOverState( true );
-                }
-            }
+        const restart = () => {
+            setGameRunningState( true );
+            gameRunning = true;
+            setPlayerHpState( 10 );
+            playerHp = 10;
+            setGameOverState( false );
+            gameOver = false;
+            setScore( 0 );
+            enemies.forEach( (enemy) => {
+                enemy.destroy();
+            })
+            enemies = [];
+            bullets.forEach( (bullet) => {
+                bullet.destroy();
+            });
+            bullets = [];
+        }
+
+        /**
+         * On first load
+         */
+        useEffect(() => {
+            const app = new Application();
 
             /**
              * Game Loop! Where most magic happens
@@ -263,8 +369,8 @@ export default function Game() {
 
                 if (gameRunning) {
                     
-                    moveEnemies();
-                    moveBullets();
+                    moveEnemies( app );
+                    moveBullets( app );
 
                     crtFilter.seed = Math.random();
                     crtFilter.time += 0.5;
@@ -276,36 +382,15 @@ export default function Game() {
                     }
                     
                     
-                    /*if( energyBarFill && energyBarFill.current ){
-                        energyBarFill.current.style.transform = 'translateY(' + ((maxEnergy - energy) * 20) + '%)';    
-                    }*/
-                    
-                    // Enemies every 2 s
+                    // Spawn Enemies every 2 s
                     if (delta.lastTime - lastEnemySpawn >= 500) {
-                        const enemy = createEnemy(Math.random() * app.screen.width, 0);
-                        app.stage.addChild(enemy);
-                        enemies.push(enemy);
+                        spawnEnemy(app);
                         lastEnemySpawn = delta.lastTime;
                     }
 
-                    /*if( delta.lastTime - lastEnergyUpdate >= 250 ) {
-                        if (energy + 1 >= maxEnergy) {
-                            energy = maxEnergy;
-                        }
-                        else {
-                            energy += 1;
-                        }
-    
-                        setEnergyState(() => {
-                            return energy;
-                        });
-
-                        lastEnergyUpdate = delta.lastTime;
-                    }*/
-
                 }
 
-                moveStars();
+                moveStars( app );
 
                 // Stars Spawning
                 if (delta.lastTime - lastStarSpawn >= 250) {
@@ -317,23 +402,13 @@ export default function Game() {
 
             }
 
-            const restart = () => {
-                setGameRunningState( true );
-                gameRunning = true;
-                setPlayerHpState( 10 );
-                playerHp = 10;
-                setGameOverState( false );
-                gameOver = false;
-                setScore( 0 );
-                enemies.forEach( (enemy) => {
-                    enemy.destroy();
-                })
-                enemies = [];
-                bullets.forEach( (bullet) => {
-                    bullet.destroy();
-                });
-                bullets = [];
-            }
+            document.addEventListener("visibilitychange", () => {
+                if (document.hidden) {
+                    gameRunning = false;
+                    setGameRunningState(false);
+                } else {
+                }
+            });
 
             
             // Wrapped in (async() => ) in order to use await and aviod promise callback hell :D
@@ -375,7 +450,7 @@ export default function Game() {
 
                 app.stage.addChild(player);
 
-                const playerSprite = Sprite.from('/player.jpg') as Player;
+                const playerSprite = Sprite.from('/player.jpg');
 
                 player.x = app.screen.width / 2;
                 player.y = app.screen.height / 2;
@@ -394,7 +469,7 @@ export default function Game() {
 
                 player.addChild(shield);
 
-                // Player movement
+                // Keystrokes
                 document.addEventListener('keydown', (e) => {
                     if (e.key === ' ') {
                         if( gameOver ) {
@@ -407,19 +482,13 @@ export default function Game() {
                     }
                 });
 
-                document.addEventListener('keyup', () => {
-                    //e.key;
-                });
-
                 // Enable interactivity
                 app.stage.eventMode = 'static';
                 app.stage.hitArea = app.screen;
 
-                app.stage.on("pointermove", movePlayer);
-
-                app.stage.on("pointerdown", () => {
-                    //fireBullet(app);
-                })
+                app.stage.on("pointermove", (e) => {
+                    movePlayer(app, e);
+                });
 
                 app.stage.on('touchend', () => {
                     if( !gameRunning ) {
@@ -463,14 +532,6 @@ export default function Game() {
                 });
 
                 app.stage.filters = [crtFilter, glitchFilter];
-
-                document.addEventListener("visibilitychange", () => {
-                    if (document.hidden) {
-                        gameRunning = false;
-                        setGameRunningState(false);
-                    } else {
-                    }
-                });
             })();
 
             return () => {
