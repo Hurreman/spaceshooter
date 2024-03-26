@@ -47,6 +47,7 @@ export default function Game() {
         let lastEnemySpawn = 0;
         let lastStarSpawn = 0;
         let lastEnergyUpdate = 0;
+        let lastBulletFire = 0;
 
         let crtFilter : CRTFilter;
 
@@ -59,20 +60,23 @@ export default function Game() {
 
         const gameCanvas = useRef<HTMLDivElement>(null);
 
+        /* Not used atms
         const energyBar = useRef<HTMLDivElement>(null);
         const energyBarFill = useRef<HTMLDivElement>(null);
+        */
 
         const fireBullet = (app : Application) => {
-            if (energy >= 1) {
+            //if (energy >= 1) {
                 const bullet = createBullet();
                 app.stage.addChild(bullet);
                 bullets.push(bullet);
-                energy -= 1;
+                
+                /*energy -= 1;
 
                 setEnergyState(() => {
                     return energy;
-                });
-            }
+                });*/
+            //}
         }
 
         useEffect(() => {
@@ -178,9 +182,9 @@ export default function Game() {
                     player.x = pos.x;
                     player.y = pos.y;
 
-                    if( energyBar.current ) {
+                    /*if( energyBar.current ) {
                         energyBar.current.style.transform = 'translateX(' + (pos.x + (player.width / 2)) + 'px) translateY(' + (pos.y - 15) + 'px)';
-                    }
+                    }*/
 
                     // Collisio Detection
                     enemies.forEach(enemy => {
@@ -243,11 +247,17 @@ export default function Game() {
 
                     crtFilter.seed = Math.random();
                     crtFilter.time += 0.5;
-                    
-                    
-                    if( energyBarFill && energyBarFill.current ){
-                        energyBarFill.current.style.transform = 'translateY(' + ((maxEnergy - energy) * 20) + '%)';    
+
+                    // Fire a bullet every x ms
+                    if( delta.lastTime - lastBulletFire > 250 ) {
+                        fireBullet(app);
+                        lastBulletFire = delta.lastTime;
                     }
+                    
+                    
+                    /*if( energyBarFill && energyBarFill.current ){
+                        energyBarFill.current.style.transform = 'translateY(' + ((maxEnergy - energy) * 20) + '%)';    
+                    }*/
                     
                     // Enemies every 2 s
                     if (delta.lastTime - lastEnemySpawn >= 500) {
@@ -293,6 +303,7 @@ export default function Game() {
                 playerHp = 10;
                 setGameOverState( false );
                 gameOver = false;
+                setScore( 0 );
                 enemies.forEach( (enemy) => {
                     enemy.destroy();
                 })
@@ -386,7 +397,7 @@ export default function Game() {
                 app.stage.on("pointermove", movePlayer);
 
                 app.stage.on("pointerdown", () => {
-                    fireBullet(app);
+                    //fireBullet(app);
                 })
 
                 app.stage.on('touchend', () => {
@@ -449,16 +460,12 @@ export default function Game() {
         return (
             <div className={"wrapper" + (gameRunningState ? ' running' : ' paused')}>
                 <div ref={gameCanvas} />
-                <div className="energyBar" ref={energyBar}>
-                    <div className="inner" ref={energyBarFill}></div>
-                </div>
                 <div className="ui">
                     <strong>HP: {playerHpState}</strong>
                     <div className={"shield" + (shieldActive ? ' active' : ' recharging')}>
                         <strong>Shield: {shieldActive ? 'Active' : 'Recharging'}</strong>
                     </div>
                     <strong>Score: {score}</strong>
-                    <strong>Energy: {energyState}</strong>
                 </div>
                 <div className={"pauseScreen" + (!gameRunningState && !gameOverState ? ' visible' : '')}>
                     <div>
