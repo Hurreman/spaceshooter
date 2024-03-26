@@ -495,6 +495,7 @@ export default function Game() {
                 </div>
                 <div className={"gameOverScreen" + (gameOverState ? ' visible' : '')}>
                     <h2>Game over!</h2>
+                    <span>Score: {score}</span>
                 </div>
             </div>
         )

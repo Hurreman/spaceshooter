@@ -10,3 +10,6 @@ Express-server and docker no the to-do.
 # Demo
 
 Playable demo (hopefully) up at https://spaceshooter.ddns.net/ :)
+
+# Screenshot
+![Screenshot of the Space Shooter game.](/screenshots/screenshot.jpg)
