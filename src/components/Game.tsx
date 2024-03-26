@@ -189,8 +189,8 @@ export default function Game() {
                 if (gameRunning) {
                     let pos = e.data.global;
                     player.x = pos.x;
-                    // Position the player 30 px above the cursor (otherwise it's obscured by your finger on mobile)
-                    player.y = pos.y - 30;
+                    // Position the player above / in front the cursor (otherwise it's obscured by your finger on mobile )
+                    player.y = pos.y - player.height;
 
                     /*if( energyBar.current ) {
                         energyBar.current.style.transform = 'translateX(' + (pos.x + (player.width / 2)) + 'px) translateY(' + (pos.y - 15) + 'px)';
