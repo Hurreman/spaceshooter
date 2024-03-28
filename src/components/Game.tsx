@@ -108,6 +108,8 @@ export default function Game() {
         let glitchFilter: GlitchFilter;
         let asciiFilter: AsciiFilter;
 
+        let asciiMode = false;
+
         let defaultFilters: any = [];
 
         const explosionTextures: any[] = [];
@@ -596,22 +598,14 @@ export default function Game() {
 
                 // Keystrokes
                 document.addEventListener('keydown', (e) => {
-                    /*if (e.key === ' ') {
-                        
-                        if( !gameRunning ) {
-                            if (gameOver) {
-                                restart();    
-                            }
-                            setGameRunningState(true);
-                            setShowLoadScreen( false );
-                            gameRunning = true;
+                    if (e.key === 'a') {
+                        if( asciiMode ) {
+                            app.stage.filters = defaultFilters];
                         }
                         else {
-                            setGameRunningState(false);
-                            setShowLoadScreen( false );
-                            gameRunning = false;
+                            app.stage.filters = [asciiFilter];
                         }
-                    }*/
+                    }
                 });
 
                 // Enable interactivity
