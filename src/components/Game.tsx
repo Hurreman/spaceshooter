@@ -601,9 +601,11 @@ export default function Game() {
                     if (e.key === 'a') {
                         if( asciiMode ) {
                             app.stage.filters = defaultFilters;
+                            asciiMode = false;
                         }
                         else {
                             app.stage.filters = [asciiFilter];
+                            asciiMode = true;
                         }
                     }
                 });
