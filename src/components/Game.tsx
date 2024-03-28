@@ -600,7 +600,7 @@ export default function Game() {
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'a') {
                         if( asciiMode ) {
-                            app.stage.filters = defaultFilters];
+                            app.stage.filters = defaultFilters;
                         }
                         else {
                             app.stage.filters = [asciiFilter];
