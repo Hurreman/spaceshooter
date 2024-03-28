@@ -3,7 +3,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: monospace;
 }
 
 * {
@@ -17,6 +17,11 @@ body, html {
   padding: 0;
 }
 
+h1,h2,h3,h4 {
+  margin: 0;
+  text-align: center;
+}
+
 .game {
   width: 50dvw;
   height: 50dvh;
@@ -24,6 +29,13 @@ body, html {
   overflow: hidden;
   position: relative;
   background: #000;
+}
+
+button {
+  background: rgba(100,190,190, 0.2);
+  border: 1px solid rgba(100,190,190, 1);
+  padding: 10px;
+  border-radius: 10px;
 }
 
 .ship {
@@ -42,6 +54,9 @@ body, html {
 
 .wrapper {
   position: relative;
+  width: 100dvw;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .wrapper canvas,
@@ -54,6 +69,33 @@ body, html {
 .gameOverScreen,
 .pauseScreen {
   z-index: 5;
+}
+
+.loadScreen {
+  z-index: 9;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100dvw;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loadScreen .content {
+  padding: 30px;
+  background-color: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  width: 70dvw;
+  max-width: 600px;
+  border: 1px solid rgba(100,190,190, 0.5);
+  border-radius: 20px;
+}
+
+.loadScreen h1 {
+  margin: 0;
 }
 
 .paused .gameArea,
@@ -125,6 +167,18 @@ body, html {
   background-color: rgba(0,0,0,0.5);
 }
 
+.gameOverScreen .content,
+.pauseScreen .content {
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  background-color: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  max-width: 600px;
+  border: 1px solid rgba(100,190,190, 0.5);
+  border-radius: 20px;
+}
+
 .pauseScreen > div {
   display: flex;
   align-items: center;
@@ -155,4 +209,29 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.newHighscore {
+  padding: 20px;
+  border: 1px solid rgba(100,190,190, 0.5);
+  border-radius: 10px;
+  background: rgba(100,190,190, 0.2);
+  margin: 30px 0;
+}
+
+.newHighscore input {
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  border: 1px solid rgba(100,190,190, 0.5);
+  background: rgba(0,0,0,0.5);
+  width: 120px;
+}
+
+.newHighscore form {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin: 10px 0;
 }

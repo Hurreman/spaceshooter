@@ -79,6 +79,7 @@ export default function Game() {
         const [newHighscoreName, setNewHighscoreName] = useState<string>('');
         const [isNewHighscoreState, setIsNewHighscoreState] = useState<boolean>(false);
         const [highscoreSubmitted, setHighscoreSubmitted] = useState<boolean>(false);
+        const [showLoadScreen, setShowLoadScreen ] = useState<boolean>(true);
 
         /**
          * State used for UI elements outside the game. The same is reflected in variables below,
@@ -592,10 +593,12 @@ export default function Game() {
                                 restart();    
                             }
                             setGameRunningState(true);
+                            setShowLoadScreen( false );
                             gameRunning = true;
                         }
                         else {
                             setGameRunningState(false);
+                            setShowLoadScreen( false );
                             gameRunning = false;
                         }
                     }
@@ -620,7 +623,7 @@ export default function Game() {
                         if (gameOver) {
                             restart();
                         }
-                        
+                        setShowLoadScreen( false );
                         setGameRunningState(true);
                         gameRunning = true;
                     
@@ -724,56 +727,72 @@ export default function Game() {
 
         return (
             <div className={"wrapper" + (gameRunningState ? ' running' : ' paused') + (isNewHighscoreState ? ' newHighscore' : '')}>
+                
                 <div className="gameArea" ref={gameCanvas} />
-                <div className="ui">
-                    <strong>HP: {playerHpState}</strong>
-                    <div className={"shield" + (shieldActive ? ' active' : ' recharging')}>
-                        <strong>Shield: {shieldActive ? 'Active' : 'Depleted'}</strong>
-                    </div>
-                    <strong>Score: {scoreState}</strong>
-                </div>
-                <div className={"pauseScreen" + (!gameRunningState && !gameOverState ? ' visible' : '')}>
-                    <div>
-                        <strong>Game is paused</strong>
-                        <div className="currentHighscores">
-                            <h4>Current highscores</h4>
-                            {sortedHighscores.slice(0,5).map( highscore => (
-                                <div key={highscore.score} className="highscore">
-                                    <span>{highscore.name}</span>
-                                    <span>{highscore.score}</span>
-                                </div>
-                            ))}
+                
+                {showLoadScreen ? (
+                    <div className="loadScreen">
+                        <div className="content">
+                            <h1>Retro Space Shooter</h1>
+                            <p>
+                                Feeling nostalgic? Welcome to a simple game that takes inspiration from the old classics, but adds its own little touch! Enjoy, and feel free to fork on Github.
+                            </p>
+                            <p>Click anywhere to begin</p>
                         </div>
-                        <p>Press <span>Space</span> (or touch on mobile) to continue.</p>
                     </div>
-                </div>
-                <div className={"gameOverScreen" + (gameOverState ? ' visible' : '')}>
-                    <div className="content">
-                        <h2>Game over!</h2>
-                        <span>Score: {scoreState}</span>
-                        {isNewHighscoreState ? (
-                            <>
-                                {!highscoreSubmitted ? (
+                ) : (
+                    <>
+                        <div className="ui">
+                            <strong>HP: {playerHpState}</strong>
+                            <div className={"shield" + (shieldActive ? ' active' : ' recharging')}>
+                                <strong>Shield: {shieldActive ? 'Active' : 'Depleted'}</strong>
+                            </div>
+                            <strong>Score: {scoreState}</strong>
+                        </div>
+                        <div className={"pauseScreen" + (!gameRunningState && !gameOverState ? ' visible' : '')}>
+                            <div>
+                                <strong>Game is paused</strong>
+                                <div className="currentHighscores">
+                                    <h4>Current highscores</h4>
+                                    {sortedHighscores.slice(0,5).map( highscore => (
+                                        <div key={highscore.score} className="highscore">
+                                            <span>{highscore.name}</span>
+                                            <span>{highscore.score}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p>Press <span>Space</span> (or touch on mobile) to continue.</p>
+                            </div>
+                        </div>
+                        <div className={"gameOverScreen" + (gameOverState ? ' visible' : '')}>
+                            <div className="content">
+                                <h2>Game over</h2>
+                                {isNewHighscoreState ? (
                                     <>
-                                        <h3>New high Score!</h3>
-                                        <form id="highscore" onSubmit={handleSubmitHighscore}>
-                                            <label>Your Name:</label>
-                                            <input type="text" value={newHighscoreName} onChange={(e) => setNewHighscoreName(e.target.value)} />
-                                            <button onClick={handleSubmitHighscore} disabled={newHighscoreName.length < 3}>Submit highscore</button>
-                                        </form>
+                                        {!highscoreSubmitted ? (
+                                            <div className="newHighscore">
+                                                <h3>New high Score: <span>{scoreState}</span></h3>
+                                                <form id="highscore" onSubmit={handleSubmitHighscore}>
+                                                    <label>Your Name:</label>
+                                                    <input maxLength={16} type="text" value={newHighscoreName} onChange={(e) => setNewHighscoreName(e.target.value)} />
+                                                    <button onClick={handleSubmitHighscore} disabled={newHighscoreName.length < 3}>Submit highscore</button>
+                                                </form>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <h3>Thank you for playing!</h3>
+                                            </>
+                                        )}
                                     </>
-                                ) : (
-                                    <>
-                                        <h3>Thank you for playing!</h3>
-                                    </>
-                                )}
-                            </>
-                        ) : ''}
-                        <button onClick={() => {
-                            restart();
-                        }}>Play again!</button>
-                    </div>
-                </div>
+                                ) : ''}
+                                <button onClick={() => {
+                                    restart();
+                                }}>Play again!</button>
+                            </div>
+                        </div>
+                    </>
+                )}
+
             </div>
         )
     }
