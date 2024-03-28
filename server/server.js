@@ -68,9 +68,9 @@ class SpaceShooterServer {
     
     setupRoutes() {
 
-        this.app.use('/highscores/', apiLimiter);
+        this.app.use('/api/highscores/', apiLimiter);
 
-        this.app.get('/highscores', (req, res) => {
+        this.app.get('/api/highscores', (req, res) => {
             this.db.all('SELECT * FROM highscores ORDER BY score DESC', (err, rows) => {
                 if (err) {
                     return res.status(500).json({ error: 'Internal Server Error' });
@@ -79,20 +79,22 @@ class SpaceShooterServer {
             });
         });
         
-        this.app.post('/highscores', (req, res) => {
+        this.app.post('/api/highscores', (req, res) => {
             let { name, score } = req.body;
         
             // Input validation
-            if (!name || !score || typeof name !== 'string' || typeof score !== 'number') {
-                console.log( name, score );
+            if (typeof name !== 'string' || isNaN(score)) {
+                console.log( typeof name, typeof score );
                 return res.status(400).json({ error: 'Invalid input' });
             }
         
             name = sanitizeHtml(name);
             score = sanitizeHtml(score);
+            
+            const scoreDate = new Date();
         
             // Use parameterized query to prevent SQL injection
-            const stmt = this.db.prepare('INSERT INTO highscores (name, score) VALUES (?, ?)');
+            const stmt = this.db.prepare('INSERT INTO highscores (name, score, scoreDate) VALUES (?, ?, ?)');
             stmt.run(name, score);
             stmt.finalize();
         
@@ -110,7 +112,7 @@ class SpaceShooterServer {
         if (!fs.existsSync(DB_FILE)) {
             const db = new sqlite3.Database(DB_FILE);
             db.serialize(() => {
-                db.run('CREATE TABLE highscores (name TEXT, score INTEGER)');
+                db.run('CREATE TABLE highscores (name TEXT, score INTEGER, scoreDate DATETIME)');
             });
             db.close();
         }

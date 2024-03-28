@@ -44,6 +44,28 @@ body, html {
   position: relative;
 }
 
+.wrapper canvas,
+.wrapper .gameArea {
+  position: relative;
+  z-index: 1;
+}
+
+.ui,
+.gameOverScreen,
+.pauseScreen {
+  z-index: 5;
+}
+
+.paued .gameArea,
+.paused canvas {
+  pointer-events: none;
+}
+
+.paused .gameOverScreen,
+.paused .pauseScreen {
+  pointer-events: all;
+}
+
 .ui {
   position: absolute;
   bottom: 0;
@@ -117,4 +139,20 @@ body, html {
 .pauseScreen.visible,
 .gameOverScreen.visible {
   opacity: 1;
+}
+
+.currentHighscores {
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+}
+
+.currentHighscores h4 {
+  margin: 0;
+}
+
+.currentHighscores .highscore {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
