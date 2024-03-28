@@ -98,16 +98,6 @@ button {
   margin: 0;
 }
 
-.paused .gameArea,
-.paused canvas {
-  pointer-events: none;
-}
-
-.paused .gameOverScreen,
-.paused .pauseScreen {
-  pointer-events: all;
-}
-
 .ui {
   position: absolute;
   bottom: 0;
@@ -151,7 +141,8 @@ button {
 }
 
 .pauseScreen,
-.gameOverScreen  {
+.gameOverScreen,
+.loadScreen  {
   position: absolute;
   top: 0;
   left: 0;
@@ -165,6 +156,14 @@ button {
   pointer-events: none;
   transition: 0.3s ease;
   background-color: rgba(0,0,0,0.5);
+  z-index: 9;
+}
+
+.pauseScreen.visible,
+.gameOverScreen.visible,
+.loadScreen.visible {
+  opacity: 1;
+  pointer-events: all;
 }
 
 .gameOverScreen .content,
@@ -188,11 +187,6 @@ button {
   padding: 30px;
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.7)
-}
-
-.pauseScreen.visible,
-.gameOverScreen.visible {
-  opacity: 1;
 }
 
 .currentHighscores {
@@ -234,4 +228,30 @@ button {
   justify-content: flex-start;
   gap: 10px;
   margin: 10px 0;
+}
+
+.pauseButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.2);
+  border-radius: 40px;
+  z-index: 99;
+  gap: 5px;
+}
+
+.pauseButton span {
+  height: 50%;
+  width: 2px;
+  background-color: #fff;
+}
+
+button:hover {
+  background: rgba(255,255,255,0.4);
+  cursor: pointer;
 }

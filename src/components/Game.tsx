@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 
 // PixiJs
 import { Application, Assets, Sprite, AnimatedSprite, Texture, Container } from 'pixi.js';
-import { AdjustmentFilter, CRTFilter, GlitchFilter } from 'pixi-filters';
+import { AdjustmentFilter, AsciiFilter, CRTFilter, GlitchFilter } from 'pixi-filters';
 
 import { generateStars, generateStar } from '../generateStars.ts';
 import { fetchHighScores, postHighScore, Score } from '../highscores.ts';
@@ -102,12 +102,21 @@ export default function Game() {
         let lastBulletFire = 0;
 
         let gameRunning = false;
-        let gameOver = false;        
+        let gameOver = false;
 
         let crtFilter: CRTFilter;
+        let glitchFilter: GlitchFilter;
+        let asciiFilter: AsciiFilter;
 
+        let defaultFilters: any = [];
 
         const explosionTextures: any[] = [];
+
+        const pauseButtonRef = useRef<HTMLDivElement>(null);
+
+        const startGameButtonRef = useRef<HTMLButtonElement>(null);
+
+        const restartButtonRef = useRef<HTMLButtonElement>(null);
 
         const gameCanvas = useRef<HTMLDivElement>(null);
 
@@ -470,6 +479,7 @@ export default function Game() {
                     crtFilter.seed = Math.random();
                     crtFilter.time += 0.5;
 
+
                     // Fire a bullet every x ms
                     if (delta.lastTime - lastBulletFire > fireRate) {
                         fireBullet(app);
@@ -586,7 +596,7 @@ export default function Game() {
 
                 // Keystrokes
                 document.addEventListener('keydown', (e) => {
-                    if (e.key === ' ') {
+                    /*if (e.key === ' ') {
                         
                         if( !gameRunning ) {
                             if (gameOver) {
@@ -601,7 +611,7 @@ export default function Game() {
                             setShowLoadScreen( false );
                             gameRunning = false;
                         }
-                    }
+                    }*/
                 });
 
                 // Enable interactivity
@@ -630,6 +640,45 @@ export default function Game() {
                     }
                 });
 
+                if( pauseButtonRef.current ) {
+                    pauseButtonRef.current.addEventListener('click', () => {
+                        console.log( 'Clicked pause button');
+                        setGameRunningState( prev => !prev );
+                        gameRunning = !gameRunning;
+                    });   
+                }
+
+                if( startGameButtonRef.current ) {
+                    startGameButtonRef.current.addEventListener('click', () => {
+                        setGameRunningState( true );
+                        setShowLoadScreen( false );
+                        gameRunning = true;
+                    });   
+                }
+
+                if( restartButtonRef.current ) {
+                    restartButtonRef.current.addEventListener('click', () => {
+                        playerHp = 3;
+                        setPlayerHpState( 3 );
+                        score = 0;
+                        setScoreState( 0 );
+                        enemies.forEach( enemy => enemy.destroy());
+                        enemies = [];
+                        bullets.forEach( bullet => bullet.destroy());
+                        bullets = [];
+                        planets.forEach( planet => planet.destroy());
+                        planets = [];
+                        powerups.forEach( powerup => powerup.destroy());
+                        powerups = [];
+                        setGameOverState( false );
+                        setGameRunningState( true );
+                        setShowLoadScreen( false );
+                        gameRunning = true;
+                        setShieldActive(true);
+                        shield.alpha = 1;
+                    });   
+                }
+                
                 /*app.stage.on('touchend', () => {
                     if (!gameRunning) {
 
@@ -662,7 +711,7 @@ export default function Game() {
                     seed: 1
                 });
 
-                const glitchFilter = new GlitchFilter({
+                glitchFilter = new GlitchFilter({
                     slices: 9,
                     offset: 5,
                     red: { x: 1, y: 0 },
@@ -670,7 +719,13 @@ export default function Game() {
                     green: { x: -1, y: 0 }
                 });
 
-                app.stage.filters = [crtFilter, glitchFilter];
+                asciiFilter = new AsciiFilter({
+                    size: 12
+                });
+
+                defaultFilters = [crtFilter,glitchFilter];
+
+                app.stage.filters = defaultFilters;
             })();
 
             return () => {
@@ -730,68 +785,68 @@ export default function Game() {
                 
                 <div className="gameArea" ref={gameCanvas} />
                 
-                {showLoadScreen ? (
-                    <div className="loadScreen">
-                        <div className="content">
-                            <h1>Retro Space Shooter</h1>
-                            <p>
-                                Feeling nostalgic? Welcome to a simple game that takes inspiration from the old classics, but adds its own little touch! Enjoy, and feel free to fork on Github.
-                            </p>
-                            <p>Click anywhere to begin</p>
+                <div ref={pauseButtonRef} className="pauseButton">
+                    <span></span>
+                    <span></span>
+                </div>
+
+                <div className={"gameOverScreen" + (gameOverState ? ' visible' : '') }>
+                    <div className="content">
+                        <h2>Game over</h2>
+                        {isNewHighscoreState ? (
+                            <>
+                                {!highscoreSubmitted ? (
+                                    <div className="newHighscore">
+                                        <h3>New high Score: <span>{scoreState}</span></h3>
+                                        <form id="highscore" onSubmit={handleSubmitHighscore}>
+                                            <label>Your Name:</label>
+                                            <input maxLength={16} type="text" value={newHighscoreName} onChange={(e) => setNewHighscoreName(e.target.value)} />
+                                            <button onClick={handleSubmitHighscore} disabled={newHighscoreName.length < 3}>Submit highscore</button>
+                                        </form>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <h3>Thank you for playing!</h3>
+                                    </>
+                                )}
+                            </>
+                        ) : ''}
+                        <button ref={restartButtonRef}>Play again!</button>
+                    </div>
+                </div>
+
+                <div className={"pauseScreen" + (!gameRunningState && !gameOverState && !showLoadScreen ? ' visible' : '')}>
+                    <div>
+                        <strong>Game is paused</strong>
+                        <div className="currentHighscores">
+                            <h4>Current highscores</h4>
+                            {sortedHighscores.slice(0,5).map( highscore => (
+                                <div key={highscore.score} className="highscore">
+                                    <span>{highscore.name}</span>
+                                    <span>{highscore.score}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
-                ) : (
-                    <>
-                        <div className="ui">
-                            <strong>HP: {playerHpState}</strong>
-                            <div className={"shield" + (shieldActive ? ' active' : ' recharging')}>
-                                <strong>Shield: {shieldActive ? 'Active' : 'Depleted'}</strong>
-                            </div>
-                            <strong>Score: {scoreState}</strong>
-                        </div>
-                        <div className={"pauseScreen" + (!gameRunningState && !gameOverState ? ' visible' : '')}>
-                            <div>
-                                <strong>Game is paused</strong>
-                                <div className="currentHighscores">
-                                    <h4>Current highscores</h4>
-                                    {sortedHighscores.slice(0,5).map( highscore => (
-                                        <div key={highscore.score} className="highscore">
-                                            <span>{highscore.name}</span>
-                                            <span>{highscore.score}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <p>Press <span>Space</span> (or touch on mobile) to continue.</p>
-                            </div>
-                        </div>
-                        <div className={"gameOverScreen" + (gameOverState ? ' visible' : '')}>
-                            <div className="content">
-                                <h2>Game over</h2>
-                                {isNewHighscoreState ? (
-                                    <>
-                                        {!highscoreSubmitted ? (
-                                            <div className="newHighscore">
-                                                <h3>New high Score: <span>{scoreState}</span></h3>
-                                                <form id="highscore" onSubmit={handleSubmitHighscore}>
-                                                    <label>Your Name:</label>
-                                                    <input maxLength={16} type="text" value={newHighscoreName} onChange={(e) => setNewHighscoreName(e.target.value)} />
-                                                    <button onClick={handleSubmitHighscore} disabled={newHighscoreName.length < 3}>Submit highscore</button>
-                                                </form>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <h3>Thank you for playing!</h3>
-                                            </>
-                                        )}
-                                    </>
-                                ) : ''}
-                                <button onClick={() => {
-                                    restart();
-                                }}>Play again!</button>
-                            </div>
-                        </div>
-                    </>
-                )}
+                </div>
+                
+                <div className={"loadScreen" + (showLoadScreen ? ' visible': '')}>
+                    <div className="content">
+                        <h1>Retro Space Shooter</h1>
+                        <p>
+                            Feeling nostalgic? Welcome to a simple game that takes inspiration from the old classics, but adds its own little touch! Enjoy, and feel free to fork on Github.
+                        </p>
+                        <button ref={startGameButtonRef}>BEGIN!</button>
+                    </div>
+                </div>
+
+                <div className="ui">
+                    <strong>HP: {playerHpState}</strong>
+                    <div className={"shield" + (shieldActive ? ' active' : ' recharging')}>
+                        <strong>Shield: {shieldActive ? 'Active' : 'Depleted'}</strong>
+                    </div>
+                    <strong>Score: {scoreState}</strong>
+                </div>
 
             </div>
         )
