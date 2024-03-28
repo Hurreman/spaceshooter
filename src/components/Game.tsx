@@ -614,7 +614,7 @@ export default function Game() {
                     app.resize();
                 });
 
-                app.stage.on('touchend', () => {
+                window.addEventListener('touchend', () => {
                     if (!gameRunning) {
 
                         if (gameOver) {
@@ -626,6 +626,19 @@ export default function Game() {
                     
                     }
                 });
+
+                /*app.stage.on('touchend', () => {
+                    if (!gameRunning) {
+
+                        if (gameOver) {
+                            restart();
+                        }
+                        
+                        setGameRunningState(true);
+                        gameRunning = true;
+                    
+                    }
+                });*/
 
                 // Generate initial stars
                 stars = generateStars(app);
@@ -735,29 +748,31 @@ export default function Game() {
                     </div>
                 </div>
                 <div className={"gameOverScreen" + (gameOverState ? ' visible' : '')}>
-                    <h2>Game over!</h2>
-                    <span>Score: {scoreState}</span>
-                    {isNewHighscoreState ? (
-                        <>
-                            {!highscoreSubmitted ? (
-                                <>
-                                    <h3>New high Score!</h3>
-                                    <form id="highscore" onSubmit={handleSubmitHighscore}>
-                                        <label>Your Name:</label>
-                                        <input type="text" value={newHighscoreName} onChange={(e) => setNewHighscoreName(e.target.value)} />
-                                        <button onClick={handleSubmitHighscore} disabled={newHighscoreName.length < 3}>Submit highscore</button>
-                                    </form>
-                                </>
-                            ) : (
-                                <>
-                                    <h3>Thank you for playing!</h3>
-                                </>
-                            )}
-                        </>
-                    ) : ''}
-                    <button onClick={() => {
-                        restart();
-                    }}>Play again!</button>
+                    <div className="content">
+                        <h2>Game over!</h2>
+                        <span>Score: {scoreState}</span>
+                        {isNewHighscoreState ? (
+                            <>
+                                {!highscoreSubmitted ? (
+                                    <>
+                                        <h3>New high Score!</h3>
+                                        <form id="highscore" onSubmit={handleSubmitHighscore}>
+                                            <label>Your Name:</label>
+                                            <input type="text" value={newHighscoreName} onChange={(e) => setNewHighscoreName(e.target.value)} />
+                                            <button onClick={handleSubmitHighscore} disabled={newHighscoreName.length < 3}>Submit highscore</button>
+                                        </form>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h3>Thank you for playing!</h3>
+                                    </>
+                                )}
+                            </>
+                        ) : ''}
+                        <button onClick={() => {
+                            restart();
+                        }}>Play again!</button>
+                    </div>
                 </div>
             </div>
         )
